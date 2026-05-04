@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       credit_ledger: {
         Row: {
           created_at: string
@@ -190,6 +208,7 @@ export type Database = {
       }
       templates: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           id: string
@@ -197,12 +216,14 @@ export type Database = {
           language: string
           overlays: Json
           page_count: number | null
+          source_url: string | null
           storage_path: string
           title: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -210,12 +231,14 @@ export type Database = {
           language?: string
           overlays?: Json
           page_count?: number | null
+          source_url?: string | null
           storage_path: string
           title: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -223,10 +246,11 @@ export type Database = {
           language?: string
           overlays?: Json
           page_count?: number | null
+          source_url?: string | null
           storage_path?: string
           title?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -262,6 +286,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      promote_to_admin_by_email: {
+        Args: { _email: string }
+        Returns: undefined
       }
     }
     Enums: {
