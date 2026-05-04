@@ -14,16 +14,260 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      credit_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          kind: Database["public"]["Enums"]["ledger_kind"]
+          note: string | null
+          reference_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          kind: Database["public"]["Enums"]["ledger_kind"]
+          note?: string | null
+          reference_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["ledger_kind"]
+          note?: string | null
+          reference_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credits: {
+        Row: {
+          balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          created_at: string
+          id: string
+          language: string
+          overlays: Json
+          page_count: number | null
+          storage_path: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string
+          overlays?: Json
+          page_count?: number | null
+          storage_path: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string
+          overlays?: Json
+          page_count?: number | null
+          storage_path?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount_usdt: number
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          credits: number
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          tx_hash: string | null
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          amount_usdt: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          credits: number
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          tx_hash?: string | null
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          amount_usdt?: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          credits?: number
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          tx_hash?: string | null
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stamps: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          language: string
+          overlays: Json
+          page_count: number | null
+          storage_path: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          language?: string
+          overlays?: Json
+          page_count?: number | null
+          storage_path: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          language?: string
+          overlays?: Json
+          page_count?: number | null
+          storage_path?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      ledger_kind: "signup_bonus" | "purchase" | "spend" | "admin_adjust"
+      payment_status: "pending" | "confirmed" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +394,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      ledger_kind: ["signup_bonus", "purchase", "spend", "admin_adjust"],
+      payment_status: ["pending", "confirmed", "rejected"],
+    },
   },
 } as const
