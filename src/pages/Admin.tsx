@@ -11,6 +11,7 @@ import { toast } from "sonner";
 interface Payment {
   id: string; user_id: string; amount_usdt: number; credits: number;
   tx_hash: string | null; status: string; created_at: string;
+  method?: string | null; wallet_address?: string | null;
 }
 
 const Admin = () => {
@@ -38,7 +39,7 @@ const Admin = () => {
       const { data: cur } = await supabase.from("credits").select("balance").eq("user_id", p.user_id).maybeSingle();
       const newBal = (cur?.balance ?? 0) + p.credits;
       await supabase.from("credits").upsert({ user_id: p.user_id, balance: newBal, updated_at: new Date().toISOString() });
-      await supabase.from("credit_ledger").insert({ user_id: p.user_id, delta: p.credits, kind: "purchase", reference_id: p.id, note: `USDT ${p.amount_usdt}` });
+      await supabase.from("credit_ledger").insert({ user_id: p.user_id, delta: p.credits, kind: "purchase", reference_id: p.id, note: `${p.method === "bob_bank" ? "BoB" : "USDT"} ${p.amount_usdt}` });
       await supabase.from("payments").update({ status: "confirmed", confirmed_at: new Date().toISOString(), confirmed_by: user!.id }).eq("id", p.id);
     } else {
       await supabase.from("payments").update({ status: "rejected", confirmed_at: new Date().toISOString(), confirmed_by: user!.id }).eq("id", p.id);
@@ -67,7 +68,7 @@ const Admin = () => {
           <table className="w-full text-sm">
             <thead className="bg-secondary/50"><tr>
               <th className="text-left p-3">Date</th><th className="text-left p-3">User</th>
-              <th className="text-left p-3">Amount</th><th className="text-left p-3">Credits</th>
+              <th className="text-left p-3">Method</th><th className="text-left p-3">Amount</th><th className="text-left p-3">Credits</th>
               <th className="text-left p-3">TX Hash</th><th className="text-left p-3">Status</th><th className="p-3"></th>
             </tr></thead>
             <tbody>
@@ -75,6 +76,7 @@ const Admin = () => {
                 <tr key={p.id} className="border-t border-border/60">
                   <td className="p-3 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleString()}</td>
                   <td className="p-3 font-mono text-xs">{p.user_id.slice(0, 8)}…</td>
+                  <td className="p-3 text-xs"><Badge variant="secondary">{p.method === "bob_bank" ? "BoB" : "USDT"}</Badge></td>
                   <td className="p-3">{p.amount_usdt} USDT</td>
                   <td className="p-3">{p.credits}</td>
                   <td className="p-3 font-mono text-xs break-all max-w-[200px]">{p.tx_hash}</td>
@@ -89,7 +91,7 @@ const Admin = () => {
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No payments yet.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No payments yet.</td></tr>}
             </tbody>
           </table>
         </div>
