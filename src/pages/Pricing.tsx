@@ -126,7 +126,7 @@ const Pricing = () => {
               <TabsContent value="bob_bank" className="space-y-4">
                 <div className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
                   <p className="text-xs text-muted-foreground">
-                    Transfer <strong>{active ? Math.round(active.usdt * 85) : ""} BTN</strong> (≈ {active?.usdt} USDT) to:
+                    Transfer <strong>{active ? active.usdt * 100 : ""} BTN</strong> (≈ {active?.usdt} USDT) to:
                   </p>
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Bank</p>

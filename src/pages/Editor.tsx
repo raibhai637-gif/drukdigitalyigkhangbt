@@ -278,22 +278,29 @@ const Editor = () => {
               <span className="sm:hidden">PDF</span>
             </Button>
             {selected && (
-              <Sheet open={propsOpen} onOpenChange={setPropsOpen}>
-                <SheetTrigger asChild>
-                  <Button size="sm" variant="soft"><Settings2 className="h-4 w-4" /></Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-80">
-                  <SheetHeader><SheetTitle>Properties</SheetTitle></SheetHeader>
-                  <PropertyPanel
-                    o={selected} onChange={(p) => updateOverlay(selected.id, p)}
-                    onDelete={() => { removeOverlay(selected.id); setPropsOpen(false); }}
-                  />
-                </SheetContent>
-              </Sheet>
+              <Button size="sm" variant="soft" onClick={() => setPropsOpen((v) => !v)}>
+                <Settings2 className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>
       </div>
+
+      {/* Translucent floating Properties panel — non-modal so the page stays visible */}
+      {selected && propsOpen && (
+        <aside className="fixed right-3 top-32 z-40 w-80 max-w-[calc(100vw-1.5rem)] rounded-xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-card supports-[backdrop-filter]:bg-card/30">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+            <h3 className="text-sm font-semibold">Properties</h3>
+            <button onClick={() => setPropsOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
+          </div>
+          <div className="p-4 max-h-[70vh] overflow-y-auto">
+            <PropertyPanel
+              o={selected} onChange={(p) => updateOverlay(selected.id, p)}
+              onDelete={() => { removeOverlay(selected.id); setPropsOpen(false); }}
+            />
+          </div>
+        </aside>
+      )}
 
       <main ref={canvasContainerRef} className="flex-1 overflow-auto py-6 px-2 sm:px-4">
         <div className="mx-auto flex flex-col items-center gap-4">
