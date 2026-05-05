@@ -9,46 +9,63 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, Coins, Copy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Pack { credits: number; usdt: number; popular?: boolean; }
 const PACKS: Pack[] = [
-  { credits: 5, usdt: 2 },
-  { credits: 20, usdt: 7, popular: true },
-  { credits: 60, usdt: 18 },
-  { credits: 200, usdt: 50 },
+  { credits: 10, usdt: 2, popular: true },
+  { credits: 30, usdt: 5 },
+  { credits: 75, usdt: 12 },
+  { credits: 200, usdt: 30 },
 ];
 
 const Pricing = () => {
   const nav = useNavigate();
   const { user } = useAuth();
   const [wallet, setWallet] = useState<string>("");
+  const [bobAccount, setBobAccount] = useState<string>("");
+  const [bobName, setBobName] = useState<string>("");
+  const [contactEmail, setContactEmail] = useState<string>("");
   const [active, setActive] = useState<Pack | null>(null);
   const [tx, setTx] = useState("");
+  const [method, setMethod] = useState<"usdt_trc20" | "bob_bank">("usdt_trc20");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    supabase.from("app_settings").select("value").eq("key", "usdt_trc20_wallet").maybeSingle()
-      .then(({ data }) => setWallet(data?.value ?? ""));
+    supabase.from("app_settings").select("key,value")
+      .in("key", ["usdt_trc20_wallet", "bob_account_number", "bob_account_name", "contact_email"])
+      .then(({ data }) => {
+        for (const row of data ?? []) {
+          if (row.key === "usdt_trc20_wallet") setWallet(row.value);
+          if (row.key === "bob_account_number") setBobAccount(row.value);
+          if (row.key === "bob_account_name") setBobName(row.value);
+          if (row.key === "contact_email") setContactEmail(row.value);
+        }
+      });
   }, []);
 
   const buy = async () => {
     if (!user) { nav("/auth"); return; }
     if (!active) return;
-    if (!tx.trim()) { toast.error("Paste your TRC20 transaction hash"); return; }
+    if (!tx.trim()) {
+      toast.error(method === "usdt_trc20" ? "Paste your TRC20 transaction hash" : "Paste your BoB transaction reference");
+      return;
+    }
     setBusy(true);
     const { error } = await supabase.from("payments").insert({
       user_id: user.id, amount_usdt: active.usdt, credits: active.credits,
-      wallet_address: wallet, tx_hash: tx.trim(), status: "pending",
+      wallet_address: method === "usdt_trc20" ? wallet : bobAccount,
+      tx_hash: tx.trim(), status: "pending", method,
     });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Payment submitted — credits will appear after verification.");
-    setActive(null); setTx("");
+    setActive(null); setTx(""); setMethod("usdt_trc20");
   };
 
-  const copy = async () => { await navigator.clipboard.writeText(wallet); toast.success("Wallet copied"); };
+  const copyText = async (t: string, label: string) => { await navigator.clipboard.writeText(t); toast.success(`${label} copied`); };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -76,27 +93,71 @@ const Pricing = () => {
           ))}
         </div>
 
+        {contactEmail && (
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            Any problem? Contact <a href={`mailto:${contactEmail}`} className="text-primary underline">{contactEmail}</a>
+          </p>
+        )}
+
         <Dialog open={!!active} onOpenChange={(o) => !o && setActive(null)}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Pay {active?.usdt} USDT for {active?.credits} credits</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div className="rounded-lg border border-border bg-secondary/40 p-4">
-                <p className="text-xs text-muted-foreground">Send <strong>exactly {active?.usdt} USDT (TRC20)</strong> to:</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <code className="flex-1 break-all text-xs bg-background rounded px-2 py-2 border border-border">{wallet || "…"}</code>
-                  <Button variant="ghost" size="icon" onClick={copy}><Copy className="h-4 w-4" /></Button>
+            <DialogHeader><DialogTitle>Buy {active?.credits} credits ({active?.usdt} USDT)</DialogTitle></DialogHeader>
+            <Tabs value={method} onValueChange={(v) => setMethod(v as "usdt_trc20" | "bob_bank")} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="usdt_trc20">USDT (TRC20)</TabsTrigger>
+                <TabsTrigger value="bob_bank">Bank of Bhutan</TabsTrigger>
+              </TabsList>
+              <TabsContent value="usdt_trc20" className="space-y-4">
+                <div className="rounded-lg border border-border bg-secondary/40 p-4">
+                  <p className="text-xs text-muted-foreground">Send <strong>exactly {active?.usdt} USDT (TRC20)</strong> to:</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <code className="flex-1 break-all text-xs bg-background rounded px-2 py-2 border border-border">{wallet || "…"}</code>
+                    <Button variant="ghost" size="icon" onClick={() => copyText(wallet, "Wallet")}><Copy className="h-4 w-4" /></Button>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">Network: <strong>TRON (TRC20)</strong>. Sending on the wrong network will lose funds.</p>
                 </div>
-                <p className="mt-3 text-xs text-muted-foreground">Network: <strong>TRON (TRC20)</strong>. Sending on the wrong network will lose funds.</p>
-              </div>
-              <div>
-                <Label>Transaction hash (TXID)</Label>
-                <Textarea rows={2} value={tx} onChange={(e) => setTx(e.target.value)} placeholder="e.g. 4f7e1c…" />
-              </div>
-              <Button variant="hero" className="w-full" onClick={buy} disabled={busy}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit payment for verification"}
-              </Button>
-              <p className="text-xs text-muted-foreground">Credits are added after admin verifies the transaction (usually within hours).</p>
-            </div>
+                <div>
+                  <Label>Transaction hash (TXID)</Label>
+                  <Textarea rows={2} value={tx} onChange={(e) => setTx(e.target.value)} placeholder="e.g. 4f7e1c…" />
+                </div>
+              </TabsContent>
+              <TabsContent value="bob_bank" className="space-y-4">
+                <div className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Transfer <strong>{active ? Math.round(active.usdt * 85) : ""} BTN</strong> (≈ {active?.usdt} USDT) to:
+                  </p>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Bank</p>
+                    <p className="text-sm font-medium">Bank of Bhutan (BoB)</p>
+                  </div>
+                  {bobName && (
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Account name</p>
+                      <p className="text-sm font-medium">{bobName}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Account number</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <code className="flex-1 break-all text-sm bg-background rounded px-2 py-2 border border-border">{bobAccount || "…"}</code>
+                      <Button variant="ghost" size="icon" onClick={() => copyText(bobAccount, "Account number")}><Copy className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">After transfer, paste the BoB transaction reference / journal number below for verification.</p>
+                </div>
+                <div>
+                  <Label>BoB transaction reference</Label>
+                  <Textarea rows={2} value={tx} onChange={(e) => setTx(e.target.value)} placeholder="e.g. mBoB journal no. or TXN ref" />
+                </div>
+              </TabsContent>
+            </Tabs>
+            <Button variant="hero" className="w-full mt-2" onClick={buy} disabled={busy}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit payment for verification"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Credits are added after admin verifies the transaction (usually within hours).
+              {contactEmail && <> Need help? <a href={`mailto:${contactEmail}`} className="text-primary underline">{contactEmail}</a></>}
+            </p>
           </DialogContent>
         </Dialog>
       </main>
