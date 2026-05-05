@@ -193,19 +193,19 @@ const Editor = () => {
     const size = pageSizes[page] ?? { widthPt: 595, heightPt: 842 };
     const x = (size.widthPt - (o.w ?? 100)) / 2;
     const y = (size.heightPt - (o.h ?? 30)) / 2;
-    const ov = { ...o, id: uid(), page, x, y } as Overlay;
+    const ov = { ...(o as object), id: uid(), page, x, y } as Overlay;
     setOverlays((prev) => [...prev, ov]);
     setSelectedId(ov.id);
   };
 
-  const addText = () => addOverlayToPage0({ kind: "text", text: "Type here", fontSize: 12, color: "#000000", w: 160, h: 22 });
-  const addCheckbox = () => addOverlayToPage0({ kind: "checkbox", checked: true, w: 14, h: 14 });
-  const addSignature = (dataUrl: string) => { addOverlayToPage0({ kind: "signature", dataUrl, w: 140, h: 50 }); setSignOpen(false); };
+  const addText = () => addOverlayToPage0({ kind: "text", text: "Type here", fontSize: 12, color: "#000000", w: 160, h: 22 } as Omit<Overlay, "id" | "page" | "x" | "y">);
+  const addCheckbox = () => addOverlayToPage0({ kind: "checkbox", checked: true, w: 14, h: 14 } as Omit<Overlay, "id" | "page" | "x" | "y">);
+  const addSignature = (dataUrl: string) => { addOverlayToPage0({ kind: "signature", dataUrl, w: 140, h: 50 } as Omit<Overlay, "id" | "page" | "x" | "y">); setSignOpen(false); };
   const addBhutanStamp = () => addOverlayToPage0({
     kind: "stamp", src: bhutanStamp, builtin: "bhutan-legal-20x25",
-    w: 20 * MM_TO_PT, h: 25 * MM_TO_PT, // exact 20mm × 25mm
-  });
-  const addCustomStamp = (url: string) => { addOverlayToPage0({ kind: "stamp", src: url, w: 20 * MM_TO_PT, h: 25 * MM_TO_PT }); setStampOpen(false); };
+    w: 20 * MM_TO_PT, h: 25 * MM_TO_PT,
+  } as Omit<Overlay, "id" | "page" | "x" | "y">);
+  const addCustomStamp = (url: string) => { addOverlayToPage0({ kind: "stamp", src: url, w: 20 * MM_TO_PT, h: 25 * MM_TO_PT } as Omit<Overlay, "id" | "page" | "x" | "y">); setStampOpen(false); };
 
   // === Upload a stamp image ===
   const onStampFile = async (file: File) => {
