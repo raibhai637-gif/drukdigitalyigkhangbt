@@ -110,9 +110,11 @@ const Pricing = () => {
               <TabsContent value="usdt_trc20" className="space-y-4">
                 <div className="rounded-lg border border-border bg-secondary/40 p-4">
                   <p className="text-xs text-muted-foreground">Send <strong>exactly {active?.usdt} USDT (TRC20)</strong> to:</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <code className="flex-1 break-all text-xs bg-background rounded px-2 py-2 border border-border">{wallet || "…"}</code>
-                    <Button variant="ghost" size="icon" onClick={() => copyText(wallet, "Wallet")}><Copy className="h-4 w-4" /></Button>
+                  <div className="mt-2 flex items-center justify-between gap-2 rounded bg-background border border-border px-3 py-2">
+                    <span className="text-xs text-muted-foreground">Wallet address hidden for security</span>
+                    <Button variant="soft" size="sm" onClick={() => copyText(wallet, "Wallet address")} disabled={!wallet}>
+                      <Copy className="h-4 w-4" /> Copy address
+                    </Button>
                   </div>
                   <p className="mt-3 text-xs text-muted-foreground">Network: <strong>TRON (TRC20)</strong>. Sending on the wrong network will lose funds.</p>
                 </div>
@@ -138,9 +140,11 @@ const Pricing = () => {
                   )}
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Account number</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <code className="flex-1 break-all text-sm bg-background rounded px-2 py-2 border border-border">{bobAccount || "…"}</code>
-                      <Button variant="ghost" size="icon" onClick={() => copyText(bobAccount, "Account number")}><Copy className="h-4 w-4" /></Button>
+                    <div className="mt-1 flex items-center justify-between gap-2 rounded bg-background border border-border px-3 py-2">
+                      <span className="text-xs text-muted-foreground">Account number hidden for security</span>
+                      <Button variant="soft" size="sm" onClick={() => copyText(bobAccount, "Account number")} disabled={!bobAccount}>
+                        <Copy className="h-4 w-4" /> Copy number
+                      </Button>
                     </div>
                   </div>
                   <p className="text-[11px] text-muted-foreground">After transfer, paste the BoB transaction reference / journal number below for verification.</p>
