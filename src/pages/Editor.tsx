@@ -282,7 +282,7 @@ const Editor = () => {
                 <SheetTrigger asChild>
                   <Button size="sm" variant="soft"><Settings2 className="h-4 w-4" /></Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-80">
+                <SheetContent side="right" className="w-80 bg-card/40 backdrop-blur-xl border-border/40 supports-[backdrop-filter]:bg-card/30">
                   <SheetHeader><SheetTitle>Properties</SheetTitle></SheetHeader>
                   <PropertyPanel
                     o={selected} onChange={(p) => updateOverlay(selected.id, p)}
