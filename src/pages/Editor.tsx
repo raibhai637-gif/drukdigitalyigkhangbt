@@ -376,7 +376,9 @@ const PageView = ({ index, pdfDoc, sizePt, zoom, overlays, selectedId, onSelect,
     let cancelled = false;
     (async () => {
       const page = await pdfDoc.getPage(index + 1);
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      // Render at higher resolution for sharper text. Cap DPR at 3 and
+      // boost low-DPI screens so PDF text stays crisp at any zoom.
+      const dpr = Math.max(2, Math.min(3, window.devicePixelRatio || 1));
       const scale = zoom * dpr;
       const vp = page.getViewport({ scale });
       const canvas = canvasRef.current; if (!canvas || cancelled) return;
