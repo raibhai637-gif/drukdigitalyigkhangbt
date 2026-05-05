@@ -1,0 +1,2 @@
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS method text NOT NULL DEFAULT 'usdt_trc20';
+ALTER TABLE public.payments ADD CONSTRAINT payments_method_check CHECK (method IN ('usdt_trc20','bob_bank'));

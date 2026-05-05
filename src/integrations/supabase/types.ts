@@ -124,6 +124,7 @@ export type Database = {
           created_at: string
           credits: number
           id: string
+          method: string
           notes: string | null
           status: Database["public"]["Enums"]["payment_status"]
           tx_hash: string | null
@@ -137,6 +138,7 @@ export type Database = {
           created_at?: string
           credits: number
           id?: string
+          method?: string
           notes?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           tx_hash?: string | null
@@ -150,6 +152,7 @@ export type Database = {
           created_at?: string
           credits?: number
           id?: string
+          method?: string
           notes?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           tx_hash?: string | null
