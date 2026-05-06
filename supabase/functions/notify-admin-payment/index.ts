@@ -1,5 +1,3 @@
-import { corsHeaders } from "https://deno.land/x/supabase_functions_js@1.0.0/mod.ts";
-
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
