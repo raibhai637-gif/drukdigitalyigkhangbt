@@ -1,6 +1,10 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Overlay } from "./pdf";
 
+// A4 portrait in PDF points
+const A4_W = 595.28;
+const A4_H = 841.89;
+
 const hexToRgb = (hex: string) => {
   const h = hex.replace("#", "");
   const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
@@ -22,15 +26,32 @@ const fetchAsBytes = async (src: string): Promise<{ bytes: Uint8Array; mime: str
 };
 
 export const exportPdf = async (originalBytes: Uint8Array, overlays: Overlay[]): Promise<Uint8Array> => {
-  const pdf = await PDFDocument.load(originalBytes.slice() as unknown as ArrayBuffer);
-  const helv = await pdf.embedFont(StandardFonts.Helvetica);
-  const helvB = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const pages = pdf.getPages();
+  // Build a fresh A4 document and embed each source page scaled (letterboxed)
+  // into A4 so on-screen WYSIWYG matches the exported PDF exactly.
+  const src = await PDFDocument.load(originalBytes.slice() as unknown as ArrayBuffer);
+  const out = await PDFDocument.create();
+  const helv = await out.embedFont(StandardFonts.Helvetica);
+  const helvB = await out.embedFont(StandardFonts.HelveticaBold);
 
-  // Group overlays by page for performance, but iterate flat is fine
+  const srcPageCount = src.getPageCount();
+  const embeddedPages = await out.embedPdf(src, Array.from({ length: srcPageCount }, (_, i) => i));
+
+  const a4Pages = embeddedPages.map((emb) => {
+    const page = out.addPage([A4_W, A4_H]);
+    const sw = emb.width;
+    const sh = emb.height;
+    const fit = Math.min(A4_W / sw, A4_H / sh);
+    const w = sw * fit;
+    const h = sh * fit;
+    const x = (A4_W - w) / 2;
+    const y = (A4_H - h) / 2;
+    page.drawPage(emb, { x, y, width: w, height: h });
+    return page;
+  });
+
   for (const o of overlays) {
-    const page = pages[o.page]; if (!page) continue;
-    const { height: ph } = page.getSize();
+    const page = a4Pages[o.page]; if (!page) continue;
+    const ph = A4_H;
     // Convert top-down (y from top) to bottom-up
     const yBottom = ph - o.y - o.h;
 
@@ -59,14 +80,13 @@ export const exportPdf = async (originalBytes: Uint8Array, overlays: Overlay[]):
       }
     } else if (o.kind === "signature") {
       const { bytes } = await fetchAsBytes(o.dataUrl);
-      const img = await pdf.embedPng(bytes);
+      const img = await out.embedPng(bytes);
       page.drawImage(img, { x: o.x, y: yBottom, width: o.w, height: o.h });
     } else if (o.kind === "stamp") {
       const { bytes, mime } = await fetchAsBytes(o.src);
-      const img = mime.includes("png") ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+      const img = mime.includes("png") ? await out.embedPng(bytes) : await out.embedJpg(bytes);
       page.drawImage(img, { x: o.x, y: yBottom, width: o.w, height: o.h });
     }
   }
-  const out = await pdf.save();
-  return out;
+  return await out.save();
 };
