@@ -54,6 +54,11 @@ const Editor = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stampUploadRef = useRef<HTMLInputElement>(null);
 
+  // A4 portrait in PDF points (1pt = 1/72 in). We display every page at A4
+  // size regardless of the source PDF page size — content is scaled to fit.
+  const A4_W_PT = 595.28;
+  const A4_H_PT = 841.89;
+
   // === Load existing document by id ===
   useEffect(() => {
     if (!docId || !user) return;
