@@ -61,6 +61,17 @@ const Pricing = () => {
     });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
+    // Notify admin (best-effort, non-blocking)
+    supabase.functions.invoke("notify-admin-payment", {
+      body: {
+        method,
+        amount_usdt: active.usdt,
+        credits: active.credits,
+        tx_hash: tx.trim(),
+        user_email: user.email,
+        user_id: user.id,
+      },
+    }).catch(() => {});
     toast.success("Payment submitted — credits will appear after verification.");
     setActive(null); setTx(""); setMethod("usdt_trc20");
   };
