@@ -80,11 +80,11 @@ export const exportPdf = async (originalBytes: Uint8Array, overlays: Overlay[]):
       }
     } else if (o.kind === "signature") {
       const { bytes } = await fetchAsBytes(o.dataUrl);
-      const img = await pdf.embedPng(bytes);
+      const img = await out.embedPng(bytes);
       page.drawImage(img, { x: o.x, y: yBottom, width: o.w, height: o.h });
     } else if (o.kind === "stamp") {
       const { bytes, mime } = await fetchAsBytes(o.src);
-      const img = mime.includes("png") ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+      const img = mime.includes("png") ? await out.embedPng(bytes) : await out.embedJpg(bytes);
       page.drawImage(img, { x: o.x, y: yBottom, width: o.w, height: o.h });
     }
   }
