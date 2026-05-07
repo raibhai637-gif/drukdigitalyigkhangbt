@@ -21,6 +21,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
+      if (s?.user) {
+        // Defer to avoid deadlock inside auth callback
+        setTimeout(async () => {
+          const { data } = await supabase.from("profiles").select("is_suspended").eq("id", s.user.id).maybeSingle();
+          if (data?.is_suspended) {
+            await supabase.auth.signOut();
+            alert("Your account has been suspended. Please contact support.");
+          }
+        }, 0);
+      }
     });
     // 2. Then existing session
     supabase.auth.getSession().then(({ data }) => {
