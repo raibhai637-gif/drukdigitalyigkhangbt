@@ -371,26 +371,24 @@ const Editor = () => {
 
 // ====================== Page rendering + drag handling ======================
 
-const PageView = ({ index, pdfDoc, sizePt, displayPt, zoom, overlays, selectedId, onSelect, onChange }: {
+const PageView = ({ index, pdfDoc, sizePt, zoom, overlays, selectedId, onSelect, onChange, pageCount }: {
   index: number;
   pdfDoc: pdfjsLib.PDFDocumentProxy;
   sizePt: { widthPt: number; heightPt: number };
-  displayPt: { widthPt: number; heightPt: number };
   zoom: number;
   overlays: Overlay[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onChange: (id: string, patch: Partial<Overlay>) => void;
+  pageCount: number;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
 
-  // Fit source page into A4 display box (preserve aspect ratio, letterboxed).
-  const fit = Math.min(displayPt.widthPt / sizePt.widthPt, displayPt.heightPt / sizePt.heightPt);
-  const renderedW = sizePt.widthPt * fit;
-  const renderedH = sizePt.heightPt * fit;
-  const offsetX = (displayPt.widthPt - renderedW) / 2;
-  const offsetY = (displayPt.heightPt - renderedH) / 2;
+  // Display the page at its NATIVE size — no letterboxing. This guarantees
+  // overlays appear exactly where they will land in the exported PDF.
+  const renderedW = sizePt.widthPt;
+  const renderedH = sizePt.heightPt;
 
   useEffect(() => {
     let cancelled = false;
@@ -399,7 +397,7 @@ const PageView = ({ index, pdfDoc, sizePt, displayPt, zoom, overlays, selectedId
       // Render at higher resolution for sharper text. Cap DPR at 3 and
       // boost low-DPI screens so PDF text stays crisp at any zoom.
       const dpr = Math.max(2, Math.min(3, window.devicePixelRatio || 1));
-      const scale = zoom * dpr * fit;
+      const scale = zoom * dpr;
       const vp = page.getViewport({ scale });
       const canvas = canvasRef.current; if (!canvas || cancelled) return;
       canvas.width = vp.width; canvas.height = vp.height;
@@ -412,32 +410,35 @@ const PageView = ({ index, pdfDoc, sizePt, displayPt, zoom, overlays, selectedId
       try { await task.promise; } catch { /* cancelled */ }
     })();
     return () => { cancelled = true; try { renderTaskRef.current?.cancel(); } catch { /* ignore */ } };
-  }, [pdfDoc, index, zoom, sizePt.widthPt, sizePt.heightPt, fit, renderedW, renderedH]);
+  }, [pdfDoc, index, zoom, sizePt.widthPt, sizePt.heightPt, renderedW, renderedH]);
 
-  const wrapStyle = { width: displayPt.widthPt * zoom, height: displayPt.heightPt * zoom };
+  const wrapStyle = { width: renderedW * zoom, height: renderedH * zoom };
 
   return (
     <div className="relative shadow-card rounded-md overflow-hidden bg-white" style={wrapStyle}
          onMouseDown={(e) => { if (e.target === e.currentTarget) onSelect(null); }}>
-      <canvas
-        ref={canvasRef}
-        className="block select-none absolute"
-        style={{ left: offsetX * zoom, top: offsetY * zoom }}
-      />
+      <canvas ref={canvasRef} className="block select-none absolute" style={{ left: 0, top: 0 }} />
+      <div className="absolute top-1.5 right-2 text-[10px] px-1.5 py-0.5 rounded bg-background/70 text-muted-foreground pointer-events-none select-none">
+        Page {index + 1} / {pageCount}
+      </div>
       {overlays.map((o) => (
         <OverlayBox key={o.id} o={o} zoom={zoom} selected={o.id === selectedId}
                     onSelect={() => onSelect(o.id)} onChange={(p) => onChange(o.id, p)}
-                    pageSize={displayPt} />
+                    pageSize={sizePt}
+                    pageIndex={index}
+                    pageCount={pageCount} />
       ))}
     </div>
   );
 };
 
-const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize }: {
+const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize, pageIndex, pageCount }: {
   o: Overlay; zoom: number; selected: boolean;
   onSelect: () => void;
   onChange: (p: Partial<Overlay>) => void;
   pageSize: { widthPt: number; heightPt: number };
+  pageIndex: number;
+  pageCount: number;
 }) => {
   const startRef = useRef<{ x: number; y: number; ox: number; oy: number; ow: number; oh: number; mode: "move" | "resize" } | null>(null);
 
