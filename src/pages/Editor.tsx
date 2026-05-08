@@ -516,6 +516,24 @@ const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize, pageIndex
                background: "hsl(var(--primary))", cursor: "se-resize",
              }} />
       )}
+      {selected && pageCount > 1 && (
+        <div className="absolute -top-8 left-0 flex gap-1 bg-card/90 backdrop-blur rounded-md border border-border/60 shadow-sm px-1 py-0.5"
+             onPointerDown={(e) => e.stopPropagation()}>
+          <button
+            disabled={pageIndex === 0}
+            onClick={(e) => { e.stopPropagation(); onChange({ page: pageIndex - 1 } as Partial<Overlay>); }}
+            className="p-1 disabled:opacity-30 hover:text-primary" title="Move to previous page">
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <span className="text-[10px] text-muted-foreground self-center px-1">p{pageIndex + 1}</span>
+          <button
+            disabled={pageIndex >= pageCount - 1}
+            onClick={(e) => { e.stopPropagation(); onChange({ page: pageIndex + 1 } as Partial<Overlay>); }}
+            className="p-1 disabled:opacity-30 hover:text-primary" title="Move to next page">
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
