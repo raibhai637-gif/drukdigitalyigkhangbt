@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import {
   Type, CheckSquare, PenLine, Stamp as StampIcon, Upload, Save, Download,
-  Trash2, ZoomIn, ZoomOut, Loader2, ChevronLeft, Settings2,
+  Trash2, ZoomIn, ZoomOut, Loader2, ChevronLeft, Settings2, ChevronUp, ChevronDown,
 } from "lucide-react";
 import { pdfjsLib, MM_TO_PT, type Overlay } from "@/lib/pdf";
 import bhutanStamp from "@/assets/bhutan-legal-stamp.jpeg";
