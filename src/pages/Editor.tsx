@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import {
   Type, CheckSquare, PenLine, Stamp as StampIcon, Upload, Save, Download,
-  Trash2, ZoomIn, ZoomOut, Loader2, ChevronLeft, Settings2,
+  Trash2, ZoomIn, ZoomOut, Loader2, ChevronLeft, Settings2, ChevronUp, ChevronDown,
 } from "lucide-react";
 import { pdfjsLib, MM_TO_PT, type Overlay } from "@/lib/pdf";
 import bhutanStamp from "@/assets/bhutan-legal-stamp.jpeg";
@@ -54,10 +54,8 @@ const Editor = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stampUploadRef = useRef<HTMLInputElement>(null);
 
-  // A4 portrait in PDF points (1pt = 1/72 in). We display every page at A4
-  // size regardless of the source PDF page size — content is scaled to fit.
-  const A4_W_PT = 595.28;
-  const A4_H_PT = 841.89;
+  // Detect mobile viewport — hide non-essential floating panels.
+  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches;
 
   // === Load existing document by id ===
   useEffect(() => {
@@ -315,12 +313,12 @@ const Editor = () => {
             pageSizes.map((sz, i) => (
               <PageView
                 key={i} index={i} pdfDoc={pdfDoc} sizePt={sz}
-                displayPt={{ widthPt: A4_W_PT, heightPt: A4_H_PT }}
                 zoom={zoom}
                 overlays={overlays.filter((o) => o.page === i)}
                 selectedId={selectedId}
-                onSelect={(id) => { setSelectedId(id); if (id) setPropsOpen(true); }}
+                onSelect={(id) => { setSelectedId(id); if (id && !isMobile) setPropsOpen(true); }}
                 onChange={updateOverlay}
+                pageCount={pageSizes.length}
               />
             ))
           )}
@@ -337,30 +335,30 @@ const Editor = () => {
 
       {/* Stamp Sheet */}
       <Sheet open={stampOpen} onOpenChange={setStampOpen}>
-        <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
-          <SheetHeader><SheetTitle>Apply a stamp</SheetTitle></SheetHeader>
-          <p className="text-xs text-muted-foreground mt-1">Stamps are placed at exact <strong>20 mm × 25 mm</strong>.</p>
+        <SheetContent side="bottom" className="h-[42vh] sm:h-[50vh] max-w-md mx-auto rounded-t-2xl overflow-y-auto p-4">
+          <SheetHeader><SheetTitle className="text-base">Apply a stamp</SheetTitle></SheetHeader>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Exact <strong>20 mm × 25 mm</strong>.</p>
 
-          <h3 className="mt-5 text-sm font-medium">Bhutan Legal Stamp</h3>
-          <button onClick={addBhutanStamp} className="mt-2 rounded-xl border border-border/70 hover:border-primary/60 p-3 flex items-center gap-3 w-full text-left">
-            <img src={bhutanStamp} alt="Bhutan legal stamp" className="h-16 w-auto rounded" />
+          <h3 className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Bhutan Legal Stamp</h3>
+          <button onClick={addBhutanStamp} className="mt-1.5 rounded-lg border border-border/70 hover:border-primary/60 p-2 flex items-center gap-2 w-full text-left">
+            <img src={bhutanStamp} alt="Bhutan legal stamp" className="h-10 w-auto rounded" />
             <div>
-              <p className="font-medium text-sm">Royal Government of Bhutan — Nu. 10 Legal Stamp</p>
-              <p className="text-xs text-muted-foreground">Exact 20mm × 25mm</p>
+              <p className="font-medium text-xs">RGoB — Nu. 10 Legal Stamp</p>
+              <p className="text-[10px] text-muted-foreground">20mm × 25mm</p>
             </div>
           </button>
 
-          <h3 className="mt-6 text-sm font-medium">Your stamps</h3>
-          <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <h3 className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Your stamps</h3>
+          <div className="mt-1.5 grid grid-cols-4 sm:grid-cols-5 gap-1.5">
             {userStamps.map((s) => (
-              <button key={s.id} onClick={() => addCustomStamp(s.url)} className="rounded-lg border border-border/70 p-2 hover:border-primary/60">
-                <img src={s.url} alt={s.name} className="h-16 w-full object-contain" />
-                <p className="mt-1 text-[10px] truncate text-muted-foreground">{s.name}</p>
+              <button key={s.id} onClick={() => addCustomStamp(s.url)} className="rounded-md border border-border/70 p-1 hover:border-primary/60">
+                <img src={s.url} alt={s.name} className="h-10 w-full object-contain" />
+                <p className="mt-0.5 text-[9px] truncate text-muted-foreground">{s.name}</p>
               </button>
             ))}
-            <label className="rounded-lg border-2 border-dashed border-border/70 p-2 grid place-items-center cursor-pointer hover:border-primary/60 min-h-[80px]">
-              <Upload className="h-5 w-5 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground mt-1">Upload</span>
+            <label className="rounded-md border-2 border-dashed border-border/70 p-1 grid place-items-center cursor-pointer hover:border-primary/60 min-h-[52px]">
+              <Upload className="h-4 w-4 text-muted-foreground" />
+              <span className="text-[9px] text-muted-foreground mt-0.5">Upload</span>
               <input ref={stampUploadRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => e.target.files?.[0] && onStampFile(e.target.files[0])} />
             </label>
@@ -373,26 +371,24 @@ const Editor = () => {
 
 // ====================== Page rendering + drag handling ======================
 
-const PageView = ({ index, pdfDoc, sizePt, displayPt, zoom, overlays, selectedId, onSelect, onChange }: {
+const PageView = ({ index, pdfDoc, sizePt, zoom, overlays, selectedId, onSelect, onChange, pageCount }: {
   index: number;
   pdfDoc: pdfjsLib.PDFDocumentProxy;
   sizePt: { widthPt: number; heightPt: number };
-  displayPt: { widthPt: number; heightPt: number };
   zoom: number;
   overlays: Overlay[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onChange: (id: string, patch: Partial<Overlay>) => void;
+  pageCount: number;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
 
-  // Fit source page into A4 display box (preserve aspect ratio, letterboxed).
-  const fit = Math.min(displayPt.widthPt / sizePt.widthPt, displayPt.heightPt / sizePt.heightPt);
-  const renderedW = sizePt.widthPt * fit;
-  const renderedH = sizePt.heightPt * fit;
-  const offsetX = (displayPt.widthPt - renderedW) / 2;
-  const offsetY = (displayPt.heightPt - renderedH) / 2;
+  // Display the page at its NATIVE size — no letterboxing. This guarantees
+  // overlays appear exactly where they will land in the exported PDF.
+  const renderedW = sizePt.widthPt;
+  const renderedH = sizePt.heightPt;
 
   useEffect(() => {
     let cancelled = false;
@@ -401,7 +397,7 @@ const PageView = ({ index, pdfDoc, sizePt, displayPt, zoom, overlays, selectedId
       // Render at higher resolution for sharper text. Cap DPR at 3 and
       // boost low-DPI screens so PDF text stays crisp at any zoom.
       const dpr = Math.max(2, Math.min(3, window.devicePixelRatio || 1));
-      const scale = zoom * dpr * fit;
+      const scale = zoom * dpr;
       const vp = page.getViewport({ scale });
       const canvas = canvasRef.current; if (!canvas || cancelled) return;
       canvas.width = vp.width; canvas.height = vp.height;
@@ -414,32 +410,35 @@ const PageView = ({ index, pdfDoc, sizePt, displayPt, zoom, overlays, selectedId
       try { await task.promise; } catch { /* cancelled */ }
     })();
     return () => { cancelled = true; try { renderTaskRef.current?.cancel(); } catch { /* ignore */ } };
-  }, [pdfDoc, index, zoom, sizePt.widthPt, sizePt.heightPt, fit, renderedW, renderedH]);
+  }, [pdfDoc, index, zoom, sizePt.widthPt, sizePt.heightPt, renderedW, renderedH]);
 
-  const wrapStyle = { width: displayPt.widthPt * zoom, height: displayPt.heightPt * zoom };
+  const wrapStyle = { width: renderedW * zoom, height: renderedH * zoom };
 
   return (
     <div className="relative shadow-card rounded-md overflow-hidden bg-white" style={wrapStyle}
          onMouseDown={(e) => { if (e.target === e.currentTarget) onSelect(null); }}>
-      <canvas
-        ref={canvasRef}
-        className="block select-none absolute"
-        style={{ left: offsetX * zoom, top: offsetY * zoom }}
-      />
+      <canvas ref={canvasRef} className="block select-none absolute" style={{ left: 0, top: 0 }} />
+      <div className="absolute top-1.5 right-2 text-[10px] px-1.5 py-0.5 rounded bg-background/70 text-muted-foreground pointer-events-none select-none">
+        Page {index + 1} / {pageCount}
+      </div>
       {overlays.map((o) => (
         <OverlayBox key={o.id} o={o} zoom={zoom} selected={o.id === selectedId}
                     onSelect={() => onSelect(o.id)} onChange={(p) => onChange(o.id, p)}
-                    pageSize={displayPt} />
+                    pageSize={sizePt}
+                    pageIndex={index}
+                    pageCount={pageCount} />
       ))}
     </div>
   );
 };
 
-const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize }: {
+const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize, pageIndex, pageCount }: {
   o: Overlay; zoom: number; selected: boolean;
   onSelect: () => void;
   onChange: (p: Partial<Overlay>) => void;
   pageSize: { widthPt: number; heightPt: number };
+  pageIndex: number;
+  pageCount: number;
 }) => {
   const startRef = useRef<{ x: number; y: number; ox: number; oy: number; ow: number; oh: number; mode: "move" | "resize" } | null>(null);
 
@@ -516,6 +515,24 @@ const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize }: {
                position: "absolute", right: -7, bottom: -7, width: 14, height: 14, borderRadius: 4,
                background: "hsl(var(--primary))", cursor: "se-resize",
              }} />
+      )}
+      {selected && pageCount > 1 && (
+        <div className="absolute -top-8 left-0 flex gap-1 bg-card/90 backdrop-blur rounded-md border border-border/60 shadow-sm px-1 py-0.5"
+             onPointerDown={(e) => e.stopPropagation()}>
+          <button
+            disabled={pageIndex === 0}
+            onClick={(e) => { e.stopPropagation(); onChange({ page: pageIndex - 1 } as Partial<Overlay>); }}
+            className="p-1 disabled:opacity-30 hover:text-primary" title="Move to previous page">
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <span className="text-[10px] text-muted-foreground self-center px-1">p{pageIndex + 1}</span>
+          <button
+            disabled={pageIndex >= pageCount - 1}
+            onClick={(e) => { e.stopPropagation(); onChange({ page: pageIndex + 1 } as Partial<Overlay>); }}
+            className="p-1 disabled:opacity-30 hover:text-primary" title="Move to next page">
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
       )}
     </div>
   );
