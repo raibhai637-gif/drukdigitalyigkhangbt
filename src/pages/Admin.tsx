@@ -177,8 +177,9 @@ const Admin = () => {
               <table className="w-full text-sm">
                 <thead className="bg-secondary/50"><tr>
                   <th className="text-left p-3">Joined</th>
-                  <th className="text-left p-3">User ID</th>
-                  <th className="text-left p-3">Display name</th>
+                  <th className="text-left p-3">Email</th>
+                  <th className="text-left p-3">Name</th>
+                  <th className="text-left p-3">Credits</th>
                   <th className="text-left p-3">Status</th>
                   <th className="p-3"></th>
                 </tr></thead>
@@ -186,15 +187,20 @@ const Admin = () => {
                   {users.map((u) => (
                     <tr key={u.id} className="border-t border-border/60">
                       <td className="p-3 text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
-                      <td className="p-3 font-mono text-xs">{u.id.slice(0, 8)}…</td>
+                      <td className="p-3 text-xs break-all">{u.email ?? "—"}</td>
                       <td className="p-3">{u.display_name ?? "—"}</td>
+                      <td className="p-3 font-medium">{u.credits}</td>
                       <td className="p-3">
                         <Badge variant={u.is_suspended ? "destructive" : "secondary"}>
                           {u.is_suspended ? "Suspended" : "Active"}
                         </Badge>
+                        {u.must_change_password && <Badge variant="outline" className="ml-1">Must reset</Badge>}
                       </td>
                       <td className="p-3">
                         <div className="flex gap-1 justify-end">
+                          <Button size="sm" variant="ghost" onClick={() => resetPassword(u.id)} disabled={busy === u.id}>
+                            <KeyRound className="h-4 w-4" /><span className="ml-1 hidden sm:inline">Reset PW</span>
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => toggleSuspend(u)} disabled={busy === u.id}>
                             {u.is_suspended ? <RotateCcw className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
                             <span className="ml-1 hidden sm:inline">{u.is_suspended ? "Unsuspend" : "Suspend"}</span>
@@ -207,7 +213,38 @@ const Admin = () => {
                       </td>
                     </tr>
                   ))}
-                  {users.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No users yet.</td></tr>}
+                  {users.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No users yet.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="resets">
+            <div className="mt-4 rounded-xl border border-border/70 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-secondary/50"><tr>
+                  <th className="text-left p-3">Date</th><th className="text-left p-3">Email</th><th className="text-left p-3">Status</th><th className="p-3"></th>
+                </tr></thead>
+                <tbody>
+                  {resetReqs.map((r) => {
+                    const matched = users.find((u) => u.email?.toLowerCase() === r.email.toLowerCase());
+                    return (
+                      <tr key={r.id} className="border-t border-border/60">
+                        <td className="p-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td>
+                        <td className="p-3 text-xs">{r.email}</td>
+                        <td className="p-3"><Badge variant={r.status === "done" ? "default" : r.status === "rejected" ? "destructive" : "secondary"}>{r.status}</Badge></td>
+                        <td className="p-3">
+                          {r.status === "pending" && matched && (
+                            <Button size="sm" variant="hero" onClick={() => resetPassword(matched.id, r.id)} disabled={busy === matched.id}>
+                              <KeyRound className="h-4 w-4" /> Reset to default
+                            </Button>
+                          )}
+                          {r.status === "pending" && !matched && <span className="text-xs text-muted-foreground">No matching user</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {resetReqs.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No reset requests.</td></tr>}
                 </tbody>
               </table>
             </div>
