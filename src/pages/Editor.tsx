@@ -54,10 +54,8 @@ const Editor = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stampUploadRef = useRef<HTMLInputElement>(null);
 
-  // A4 portrait in PDF points (1pt = 1/72 in). We display every page at A4
-  // size regardless of the source PDF page size — content is scaled to fit.
-  const A4_W_PT = 595.28;
-  const A4_H_PT = 841.89;
+  // Detect mobile viewport — hide non-essential floating panels.
+  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches;
 
   // === Load existing document by id ===
   useEffect(() => {
@@ -315,12 +313,12 @@ const Editor = () => {
             pageSizes.map((sz, i) => (
               <PageView
                 key={i} index={i} pdfDoc={pdfDoc} sizePt={sz}
-                displayPt={{ widthPt: A4_W_PT, heightPt: A4_H_PT }}
                 zoom={zoom}
                 overlays={overlays.filter((o) => o.page === i)}
                 selectedId={selectedId}
-                onSelect={(id) => { setSelectedId(id); if (id) setPropsOpen(true); }}
+                onSelect={(id) => { setSelectedId(id); if (id && !isMobile) setPropsOpen(true); }}
                 onChange={updateOverlay}
+                pageCount={pageSizes.length}
               />
             ))
           )}
