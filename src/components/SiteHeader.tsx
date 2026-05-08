@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCredits } from "@/hooks/useCredits";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Coins, LogOut } from "lucide-react";
+import { Menu, Coins, LogOut, Settings as SettingsIcon } from "lucide-react";
 import { useState } from "react";
 
 const links = [
@@ -58,6 +58,9 @@ export const SiteHeader = () => {
               <Button variant="hero" size="sm" className="hidden sm:inline-flex" onClick={() => navigate("/editor")}>
                 Open editor
               </Button>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/settings")} aria-label="Settings" className="hidden sm:inline-flex">
+                <SettingsIcon className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out" className="hidden sm:inline-flex">
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -99,6 +102,9 @@ export const SiteHeader = () => {
                     </div>
                     <Button variant="hero" onClick={() => { setOpen(false); navigate("/editor"); }}>
                       Open editor
+                    </Button>
+                    <Button variant="ghost" onClick={() => { setOpen(false); navigate("/settings"); }}>
+                      Settings
                     </Button>
                     <Button variant="ghost" onClick={() => { setOpen(false); signOut(); }}>
                       Sign out

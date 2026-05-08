@@ -49,6 +49,7 @@ const Editor = () => {
   const [propsOpen, setPropsOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [userStamps, setUserStamps] = useState<{ id: string; name: string; url: string }[]>([]);
+  const [userSigs, setUserSigs] = useState<{ id: string; name: string; data_url: string }[]>([]);
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,6 +102,26 @@ const Editor = () => {
       setUserStamps(withUrls);
     })();
   }, [user]);
+
+  // === Load user signatures ===
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("signatures").select("id,name,data_url").eq("user_id", user.id).order("created_at", { ascending: false })
+      .then(({ data }) => setUserSigs((data ?? []) as { id: string; name: string; data_url: string }[]));
+  }, [user]);
+
+  const saveSignature = async (dataUrl: string) => {
+    if (!user) return;
+    const name = `Signature ${new Date().toLocaleDateString()}`;
+    const { data, error } = await supabase.from("signatures").insert({ user_id: user.id, name, data_url: dataUrl }).select("id,name,data_url").single();
+    if (error) { toast.error(error.message); return; }
+    setUserSigs((p) => [data as { id: string; name: string; data_url: string }, ...p]);
+    toast.success("Signature saved");
+  };
+  const deleteSignature = async (id: string) => {
+    await supabase.from("signatures").delete().eq("id", id);
+    setUserSigs((p) => p.filter((s) => s.id !== id));
+  };
 
   // === Render pages ===
   useEffect(() => {
@@ -327,9 +348,27 @@ const Editor = () => {
 
       {/* Signature Sheet */}
       <Sheet open={signOpen} onOpenChange={setSignOpen}>
-        <SheetContent side="bottom" className="h-[60vh]">
+        <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
           <SheetHeader><SheetTitle>Draw your signature</SheetTitle></SheetHeader>
-          <SignaturePad onDone={addSignature} />
+          <SignaturePad onDone={addSignature} onSave={saveSignature} />
+          {userSigs.length > 0 && (
+            <>
+              <h3 className="mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Saved signatures</h3>
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {userSigs.map((s) => (
+                  <div key={s.id} className="rounded-md border border-border/70 p-1.5">
+                    <button onClick={() => addSignature(s.data_url)} className="block w-full">
+                      <img src={s.data_url} alt={s.name} className="h-12 w-full object-contain bg-white rounded" />
+                    </button>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] truncate text-muted-foreground">{s.name}</span>
+                      <button onClick={() => deleteSignature(s.id)} className="text-[10px] text-destructive hover:underline">Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </SheetContent>
       </Sheet>
 

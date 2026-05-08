@@ -12,6 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, Coins, Copy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import bobLogo from "@/assets/bob-logo.png";
+
+// 1 USDT ≈ 100 BTN (admin can adjust as needed)
+const BTN_PER_USDT = 100;
 
 interface Pack { credits: number; usdt: number; popular?: boolean; }
 const PACKS: Pack[] = [
@@ -32,6 +36,7 @@ const Pricing = () => {
   const [tx, setTx] = useState("");
   const [method, setMethod] = useState<"usdt_trc20" | "bob_bank">("usdt_trc20");
   const [busy, setBusy] = useState(false);
+  const [screenshot, setScreenshot] = useState<File | null>(null);
 
   useEffect(() => {
     supabase.from("app_settings").select("key,value")
@@ -54,10 +59,17 @@ const Pricing = () => {
       return;
     }
     setBusy(true);
+    let screenshotPath: string | null = null;
+    if (screenshot) {
+      const path = `${user.id}/${Date.now()}-${screenshot.name}`;
+      const { error: upErr } = await supabase.storage.from("payment-screenshots").upload(path, screenshot, { contentType: screenshot.type });
+      if (upErr) { setBusy(false); toast.error(upErr.message); return; }
+      screenshotPath = path;
+    }
     const { error } = await supabase.from("payments").insert({
       user_id: user.id, amount_usdt: active.usdt, credits: active.credits,
       wallet_address: method === "usdt_trc20" ? wallet : bobAccount,
-      tx_hash: tx.trim(), status: "pending", method,
+      tx_hash: tx.trim(), status: "pending", method, screenshot_path: screenshotPath,
     });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
@@ -73,7 +85,7 @@ const Pricing = () => {
       },
     }).catch(() => {});
     toast.success("Payment submitted — credits will appear after verification.");
-    setActive(null); setTx(""); setMethod("usdt_trc20");
+    setActive(null); setTx(""); setMethod("usdt_trc20"); setScreenshot(null);
   };
 
   const copyText = async (t: string, label: string) => { await navigator.clipboard.writeText(t); toast.success(`${label} copied`); };
@@ -93,7 +105,11 @@ const Pricing = () => {
               {p.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-brand px-3 py-1 text-xs text-primary-foreground">Best value</span>}
               <div className="flex items-center gap-2 text-muted-foreground"><Coins className="h-4 w-4 text-primary" /><span className="text-sm">Credits</span></div>
               <p className="mt-1 text-4xl font-semibold">{p.credits}</p>
-              <p className="mt-1 text-muted-foreground text-sm">{p.usdt} USDT</p>
+              <p className="mt-1 text-muted-foreground text-sm">
+                <span className="text-foreground font-medium">Nu. {p.usdt * BTN_PER_USDT}</span>
+                <span className="mx-1.5 opacity-60">·</span>
+                {p.usdt} USDT
+              </p>
               <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
                 <li className="flex gap-2"><Check className="h-4 w-4 text-success" /> {p.credits} PDF downloads</li>
                 <li className="flex gap-2"><Check className="h-4 w-4 text-success" /> Templates & stamps included</li>
@@ -112,7 +128,7 @@ const Pricing = () => {
 
         <Dialog open={!!active} onOpenChange={(o) => !o && setActive(null)}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Buy {active?.credits} credits ({active?.usdt} USDT)</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Buy {active?.credits} credits — Nu. {active ? active.usdt * BTN_PER_USDT : ""} / {active?.usdt} USDT</DialogTitle></DialogHeader>
             <Tabs value={method} onValueChange={(v) => setMethod(v as "usdt_trc20" | "bob_bank")} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="usdt_trc20">USDT (TRC20)</TabsTrigger>
@@ -136,13 +152,16 @@ const Pricing = () => {
               </TabsContent>
               <TabsContent value="bob_bank" className="space-y-4">
                 <div className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
-                  <p className="text-xs text-muted-foreground">
-                    Transfer <strong>{active ? active.usdt * 100 : ""} BTN</strong> (≈ {active?.usdt} USDT) to:
-                  </p>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Bank</p>
-                    <p className="text-sm font-medium">Bank of Bhutan (BoB)</p>
+                  <div className="flex items-center gap-3">
+                    <img src={bobLogo} alt="Bank of Bhutan" width={56} height={56} loading="lazy" className="h-14 w-14 object-contain rounded bg-white p-1" />
+                    <div>
+                      <p className="text-sm font-medium">Bank of Bhutan (BoB)</p>
+                      <p className="text-[11px] text-muted-foreground">Official Bhutanese bank transfer</p>
+                    </div>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Transfer <strong>Nu. {active ? active.usdt * BTN_PER_USDT : ""}</strong> (≈ {active?.usdt} USDT) to:
+                  </p>
                   {bobName && (
                     <div>
                       <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Account name</p>
@@ -166,6 +185,11 @@ const Pricing = () => {
                 </div>
               </TabsContent>
             </Tabs>
+            <div>
+              <Label>Payment screenshot <span className="text-muted-foreground">(required)</span></Label>
+              <Input type="file" accept="image/*" onChange={(e) => setScreenshot(e.target.files?.[0] ?? null)} />
+              {screenshot && <p className="text-[11px] text-muted-foreground mt-1">Selected: {screenshot.name}</p>}
+            </div>
             <Button variant="hero" className="w-full mt-2" onClick={buy} disabled={busy}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit payment for verification"}
             </Button>

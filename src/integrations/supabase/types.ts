@@ -116,6 +116,36 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["reset_status"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["reset_status"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["reset_status"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_usdt: number
@@ -126,6 +156,7 @@ export type Database = {
           id: string
           method: string
           notes: string | null
+          screenshot_path: string | null
           status: Database["public"]["Enums"]["payment_status"]
           tx_hash: string | null
           user_id: string
@@ -140,6 +171,7 @@ export type Database = {
           id?: string
           method?: string
           notes?: string | null
+          screenshot_path?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           tx_hash?: string | null
           user_id: string
@@ -154,6 +186,7 @@ export type Database = {
           id?: string
           method?: string
           notes?: string | null
+          screenshot_path?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           tx_hash?: string | null
           user_id?: string
@@ -168,6 +201,7 @@ export type Database = {
           display_name: string | null
           id: string
           is_suspended: boolean
+          must_change_password: boolean
           updated_at: string
         }
         Insert: {
@@ -176,6 +210,7 @@ export type Database = {
           display_name?: string | null
           id: string
           is_suspended?: boolean
+          must_change_password?: boolean
           updated_at?: string
         }
         Update: {
@@ -184,7 +219,32 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_suspended?: boolean
+          must_change_password?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      signatures: {
+        Row: {
+          created_at: string
+          data_url: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_url: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_url?: string
+          id?: string
+          name?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -302,6 +362,7 @@ export type Database = {
       app_role: "admin" | "user"
       ledger_kind: "signup_bonus" | "purchase" | "spend" | "admin_adjust"
       payment_status: "pending" | "confirmed" | "rejected"
+      reset_status: "pending" | "done" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -432,6 +493,7 @@ export const Constants = {
       app_role: ["admin", "user"],
       ledger_kind: ["signup_bonus", "purchase", "spend", "admin_adjust"],
       payment_status: ["pending", "confirmed", "rejected"],
+      reset_status: ["pending", "done", "rejected"],
     },
   },
 } as const

@@ -24,10 +24,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (s?.user) {
         // Defer to avoid deadlock inside auth callback
         setTimeout(async () => {
-          const { data } = await supabase.from("profiles").select("is_suspended").eq("id", s.user.id).maybeSingle();
+          const { data } = await supabase.from("profiles").select("is_suspended,must_change_password").eq("id", s.user.id).maybeSingle();
           if (data?.is_suspended) {
             await supabase.auth.signOut();
             alert("Your account has been suspended. Please contact support.");
+            return;
+          }
+          if (data?.must_change_password && !window.location.pathname.startsWith("/change-password")) {
+            window.location.replace("/change-password");
           }
         }, 0);
       }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export const SignaturePad = ({ onDone }: { onDone: (dataUrl: string) => void }) => {
+export const SignaturePad = ({ onDone, onSave }: { onDone: (dataUrl: string) => void; onSave?: (dataUrl: string) => void }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawing, setDrawing] = useState(false);
   const [hasInk, setHasInk] = useState(false);
@@ -56,6 +56,9 @@ export const SignaturePad = ({ onDone }: { onDone: (dataUrl: string) => void }) 
       </div>
       <div className="flex gap-2 mt-3">
         <Button variant="ghost" onClick={clear}>Clear</Button>
+        {onSave && (
+          <Button variant="soft" onClick={() => { if (hasInk) onSave(canvasRef.current!.toDataURL("image/png")); }} disabled={!hasInk}>Save for later</Button>
+        )}
         <Button variant="hero" className="ml-auto" onClick={apply} disabled={!hasInk}>Apply signature</Button>
       </div>
     </div>
