@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Check, X, Ban, Trash2, RotateCcw, Users, CreditCard } from "lucide-react";
+import { Loader2, Check, X, Ban, Trash2, RotateCcw, Users, CreditCard, KeyRound } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
@@ -17,10 +17,15 @@ interface Payment {
 
 interface UserRow {
   id: string;
+  email: string | null;
   display_name: string | null;
   is_suspended: boolean;
+  credits: number;
+  must_change_password: boolean;
   created_at: string;
 }
+
+interface ResetReq { id: string; user_id: string | null; email: string; status: string; created_at: string; }
 
 const Admin = () => {
   const nav = useNavigate();
@@ -30,6 +35,7 @@ const Admin = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [resetReqs, setResetReqs] = useState<ResetReq[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -40,8 +46,10 @@ const Admin = () => {
   const load = async () => {
     const { data, error } = await supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(200);
     if (error) toast.error(error.message); else setRows(data as Payment[]);
-    const { data: us } = await supabase.from("profiles").select("id,display_name,is_suspended,created_at").order("created_at", { ascending: false });
-    setUsers((us ?? []) as UserRow[]);
+    const { data: us } = await supabase.functions.invoke("admin-list-users");
+    setUsers(((us as { users?: UserRow[] })?.users ?? []) as UserRow[]);
+    const { data: rr } = await supabase.from("password_reset_requests").select("*").order("created_at", { ascending: false }).limit(100);
+    setResetReqs((rr ?? []) as ResetReq[]);
     setPendingCount(((data ?? []) as Payment[]).filter((p) => p.status === "pending").length);
   };
   useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
@@ -75,6 +83,15 @@ const Admin = () => {
     setBusy(null);
     if (error) toast.error(error.message);
     else { toast.success("User deleted"); load(); }
+  };
+
+  const resetPassword = async (userId: string, requestId?: string) => {
+    if (!confirm("Reset this user's password to 'dorjijamtse'? They will be forced to change it at next sign-in.")) return;
+    setBusy(userId);
+    const { error } = await supabase.functions.invoke("admin-reset-password", { body: { user_id: userId, request_id: requestId } });
+    setBusy(null);
+    if (error) toast.error(error.message);
+    else { toast.success("Password reset to default"); load(); }
   };
 
   if (isAdmin === null) return <div className="min-h-screen grid place-items-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
@@ -118,6 +135,7 @@ const Admin = () => {
           <TabsList>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="resets">Reset Requests</TabsTrigger>
           </TabsList>
 
           <TabsContent value="payments">
