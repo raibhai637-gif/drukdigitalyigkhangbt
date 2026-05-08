@@ -12,6 +12,8 @@ import Editor from "./pages/Editor";
 import Pricing from "./pages/Pricing";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
+import ChangePassword from "./pages/ChangePassword";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/editor" element={<RequireAuth><Editor /></RequireAuth>} />
             <Route path="/editor/:docId" element={<RequireAuth><Editor /></RequireAuth>} />
             <Route path="/admin" element={<RequireAuth><Admin /></RequireAuth>} />
+            <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+            <Route path="/change-password" element={<RequireAuth><ChangePassword /></RequireAuth>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
