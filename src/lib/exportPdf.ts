@@ -1,10 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Overlay } from "./pdf";
 
-// A4 portrait in PDF points
-const A4_W = 595.28;
-const A4_H = 841.89;
-
 const hexToRgb = (hex: string) => {
   const h = hex.replace("#", "");
   const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
@@ -26,32 +22,16 @@ const fetchAsBytes = async (src: string): Promise<{ bytes: Uint8Array; mime: str
 };
 
 export const exportPdf = async (originalBytes: Uint8Array, overlays: Overlay[]): Promise<Uint8Array> => {
-  // Build a fresh A4 document and embed each source page scaled (letterboxed)
-  // into A4 so on-screen WYSIWYG matches the exported PDF exactly.
-  const src = await PDFDocument.load(originalBytes.slice() as unknown as ArrayBuffer);
-  const out = await PDFDocument.create();
+  // Keep the source PDF pages at their native size — overlays are stored in
+  // coordinates relative to each page's own size, so display === export.
+  const out = await PDFDocument.load(originalBytes.slice() as unknown as ArrayBuffer);
   const helv = await out.embedFont(StandardFonts.Helvetica);
   const helvB = await out.embedFont(StandardFonts.HelveticaBold);
-
-  const srcPageCount = src.getPageCount();
-  const embeddedPages = await out.embedPdf(src, Array.from({ length: srcPageCount }, (_, i) => i));
-
-  const a4Pages = embeddedPages.map((emb) => {
-    const page = out.addPage([A4_W, A4_H]);
-    const sw = emb.width;
-    const sh = emb.height;
-    const fit = Math.min(A4_W / sw, A4_H / sh);
-    const w = sw * fit;
-    const h = sh * fit;
-    const x = (A4_W - w) / 2;
-    const y = (A4_H - h) / 2;
-    page.drawPage(emb, { x, y, width: w, height: h });
-    return page;
-  });
+  const pages = out.getPages();
 
   for (const o of overlays) {
-    const page = a4Pages[o.page]; if (!page) continue;
-    const ph = A4_H;
+    const page = pages[o.page]; if (!page) continue;
+    const ph = page.getHeight();
     // Convert top-down (y from top) to bottom-up
     const yBottom = ph - o.y - o.h;
 
