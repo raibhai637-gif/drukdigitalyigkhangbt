@@ -335,30 +335,30 @@ const Editor = () => {
 
       {/* Stamp Sheet */}
       <Sheet open={stampOpen} onOpenChange={setStampOpen}>
-        <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
-          <SheetHeader><SheetTitle>Apply a stamp</SheetTitle></SheetHeader>
-          <p className="text-xs text-muted-foreground mt-1">Stamps are placed at exact <strong>20 mm × 25 mm</strong>.</p>
+        <SheetContent side="bottom" className="h-[42vh] sm:h-[50vh] max-w-md mx-auto rounded-t-2xl overflow-y-auto p-4">
+          <SheetHeader><SheetTitle className="text-base">Apply a stamp</SheetTitle></SheetHeader>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Exact <strong>20 mm × 25 mm</strong>.</p>
 
-          <h3 className="mt-5 text-sm font-medium">Bhutan Legal Stamp</h3>
-          <button onClick={addBhutanStamp} className="mt-2 rounded-xl border border-border/70 hover:border-primary/60 p-3 flex items-center gap-3 w-full text-left">
-            <img src={bhutanStamp} alt="Bhutan legal stamp" className="h-16 w-auto rounded" />
+          <h3 className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Bhutan Legal Stamp</h3>
+          <button onClick={addBhutanStamp} className="mt-1.5 rounded-lg border border-border/70 hover:border-primary/60 p-2 flex items-center gap-2 w-full text-left">
+            <img src={bhutanStamp} alt="Bhutan legal stamp" className="h-10 w-auto rounded" />
             <div>
-              <p className="font-medium text-sm">Royal Government of Bhutan — Nu. 10 Legal Stamp</p>
-              <p className="text-xs text-muted-foreground">Exact 20mm × 25mm</p>
+              <p className="font-medium text-xs">RGoB — Nu. 10 Legal Stamp</p>
+              <p className="text-[10px] text-muted-foreground">20mm × 25mm</p>
             </div>
           </button>
 
-          <h3 className="mt-6 text-sm font-medium">Your stamps</h3>
-          <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <h3 className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Your stamps</h3>
+          <div className="mt-1.5 grid grid-cols-4 sm:grid-cols-5 gap-1.5">
             {userStamps.map((s) => (
-              <button key={s.id} onClick={() => addCustomStamp(s.url)} className="rounded-lg border border-border/70 p-2 hover:border-primary/60">
-                <img src={s.url} alt={s.name} className="h-16 w-full object-contain" />
-                <p className="mt-1 text-[10px] truncate text-muted-foreground">{s.name}</p>
+              <button key={s.id} onClick={() => addCustomStamp(s.url)} className="rounded-md border border-border/70 p-1 hover:border-primary/60">
+                <img src={s.url} alt={s.name} className="h-10 w-full object-contain" />
+                <p className="mt-0.5 text-[9px] truncate text-muted-foreground">{s.name}</p>
               </button>
             ))}
-            <label className="rounded-lg border-2 border-dashed border-border/70 p-2 grid place-items-center cursor-pointer hover:border-primary/60 min-h-[80px]">
-              <Upload className="h-5 w-5 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground mt-1">Upload</span>
+            <label className="rounded-md border-2 border-dashed border-border/70 p-1 grid place-items-center cursor-pointer hover:border-primary/60 min-h-[52px]">
+              <Upload className="h-4 w-4 text-muted-foreground" />
+              <span className="text-[9px] text-muted-foreground mt-0.5">Upload</span>
               <input ref={stampUploadRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => e.target.files?.[0] && onStampFile(e.target.files[0])} />
             </label>
