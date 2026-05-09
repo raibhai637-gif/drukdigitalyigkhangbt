@@ -26,7 +26,6 @@ export const exportPdf = async (originalBytes: Uint8Array, overlays: Overlay[]):
   // coordinates relative to each page's own size, so display === export.
   const out = await PDFDocument.load(originalBytes.slice() as unknown as ArrayBuffer);
   const helv = await out.embedFont(StandardFonts.Helvetica);
-  const helvB = await out.embedFont(StandardFonts.HelveticaBold);
   const pages = out.getPages();
 
   for (const o of overlays) {
