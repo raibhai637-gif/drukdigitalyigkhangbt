@@ -178,12 +178,12 @@ const Editor = () => {
     }
     setBusy("download");
     try {
-      // Try to spend a credit first (atomic-ish via two writes)
-      const { data: cur } = await supabase.from("credits").select("balance").eq("user_id", user!.id).single();
-      if (!cur || cur.balance < 1) throw new Error("Not enough credits");
-      const { error: dec } = await supabase.from("credits").update({ balance: cur.balance - 1, updated_at: new Date().toISOString() }).eq("user_id", user!.id);
-      if (dec) throw dec;
-      await supabase.from("credit_ledger").insert({ user_id: user!.id, delta: -1, kind: "spend", reference_id: doc.id, note: `Export ${doc.title}` });
+      // Atomic credit deduction + ledger via SECURITY DEFINER RPC.
+      const { data: ok, error: rpcErr } = await supabase.rpc("consume_credit", {
+        _user: user!.id, _ref: doc.id, _note: `Export ${doc.title}`,
+      });
+      if (rpcErr) throw rpcErr;
+      if (!ok) throw new Error("Not enough credits");
       // Save current state, then export
       await supabase.from("documents").update({ overlays: overlays as unknown as never }).eq("id", doc.id);
       const out = await exportPdf(pdfBytes, overlays);
