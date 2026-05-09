@@ -556,21 +556,18 @@ const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize, pageIndex
              }} />
       )}
       {selected && pageCount > 1 && (
-        <div className="absolute -top-8 left-0 flex gap-1 bg-card/90 backdrop-blur rounded-md border border-border/60 shadow-sm px-1 py-0.5"
+        <div className="absolute -top-8 left-0 flex items-center gap-1 bg-card/95 backdrop-blur rounded-md border border-border/60 shadow-sm px-1.5 py-0.5"
              onPointerDown={(e) => e.stopPropagation()}>
-          <button
-            disabled={pageIndex === 0}
-            onClick={(e) => { e.stopPropagation(); onChange({ page: pageIndex - 1 } as Partial<Overlay>); }}
-            className="p-1 disabled:opacity-30 hover:text-primary" title="Move to previous page">
-            <ChevronUp className="h-3.5 w-3.5" />
-          </button>
-          <span className="text-[10px] text-muted-foreground self-center px-1">p{pageIndex + 1}</span>
-          <button
-            disabled={pageIndex >= pageCount - 1}
-            onClick={(e) => { e.stopPropagation(); onChange({ page: pageIndex + 1 } as Partial<Overlay>); }}
-            className="p-1 disabled:opacity-30 hover:text-primary" title="Move to next page">
-            <ChevronDown className="h-3.5 w-3.5" />
-          </button>
+          <span className="text-[10px] text-muted-foreground">Move to</span>
+          <select
+            value={pageIndex}
+            onChange={(e) => { e.stopPropagation(); onChange({ page: Number(e.target.value) } as Partial<Overlay>); }}
+            onClick={(e) => e.stopPropagation()}
+            className="text-[11px] bg-background border border-border/60 rounded px-1 py-0.5 cursor-pointer">
+            {Array.from({ length: pageCount }, (_, i) => (
+              <option key={i} value={i}>Page {i + 1}</option>
+            ))}
+          </select>
         </div>
       )}
     </div>
