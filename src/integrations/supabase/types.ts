@@ -346,6 +346,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_confirm_payment: { Args: { _payment: string }; Returns: undefined }
+      admin_reject_payment: { Args: { _payment: string }; Returns: undefined }
+      consume_credit: {
+        Args: { _note: string; _ref: string; _user: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
