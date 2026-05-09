@@ -23,13 +23,18 @@ Deno.serve(async (req) => {
     const { user_id, request_id } = await req.json();
     if (!user_id) return new Response(JSON.stringify({ error: "user_id required" }), { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
 
-    const { error } = await admin.auth.admin.updateUserById(user_id, { password: "dorjijamtse" });
+    // Generate a strong random temporary password (returned once to admin).
+    const buf = new Uint8Array(12);
+    crypto.getRandomValues(buf);
+    const tempPassword = Array.from(buf, (b) => "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 56]).join("");
+
+    const { error } = await admin.auth.admin.updateUserById(user_id, { password: tempPassword });
     if (error) throw error;
     await admin.from("profiles").update({ must_change_password: true }).eq("id", user_id);
     if (request_id) {
       await admin.from("password_reset_requests").update({ status: "done", resolved_at: new Date().toISOString(), resolved_by: userData.user.id }).eq("id", request_id);
     }
-    return new Response(JSON.stringify({ ok: true }), { headers: { ...CORS, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, temp_password: tempPassword }), { headers: { ...CORS, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
   }
