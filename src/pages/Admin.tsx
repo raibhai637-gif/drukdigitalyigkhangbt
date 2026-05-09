@@ -85,10 +85,18 @@ const Admin = () => {
   const resetPassword = async (userId: string, requestId?: string) => {
     if (!confirm("Reset this user's password to a temporary value and force them to set a new one at next sign-in?")) return;
     setBusy(userId);
-    const { error } = await supabase.functions.invoke("admin-reset-password", { body: { user_id: userId, request_id: requestId } });
+    const { data, error } = await supabase.functions.invoke("admin-reset-password", { body: { user_id: userId, request_id: requestId } });
     setBusy(null);
     if (error) toast.error(error.message);
-    else { toast.success("Password reset — user must change on next login"); load(); }
+    else {
+      const tp = (data as { temp_password?: string })?.temp_password;
+      if (tp) {
+        await navigator.clipboard.writeText(tp).catch(() => {});
+        alert(`Temporary password (copied to clipboard, share once):\n\n${tp}\n\nThe user must change it on next sign-in.`);
+      }
+      toast.success("Password reset");
+      load();
+    }
   };
 
   const viewScreenshot = async (path: string) => {
