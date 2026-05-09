@@ -36,9 +36,11 @@ export const exportPdf = async (originalBytes: Uint8Array, overlays: Overlay[]):
     const yBottom = ph - o.y - o.h;
 
     if (o.kind === "text") {
+      // CSS baseline ≈ top + 0.85*fontSize (with line-height: 1).
+      // pdf-lib drawText positions glyph baseline at y. Convert to bottom-up.
       page.drawText(o.text || "", {
         x: o.x,
-        y: ph - o.y - o.fontSize, // baseline placement near top of box
+        y: ph - o.y - o.fontSize * 0.85,
         size: o.fontSize,
         font: helv,
         color: hexToRgb(o.color),
@@ -51,12 +53,17 @@ export const exportPdf = async (originalBytes: Uint8Array, overlays: Overlay[]):
         borderColor: rgb(0, 0, 0), borderWidth: 1,
       });
       if (o.checked) {
-        const size = Math.min(o.w, o.h) * 0.95;
-        page.drawText("X", {
-          x: o.x + (o.w - size * 0.55) / 2,
-          y: yBottom + (o.h - size * 0.7) / 2,
-          size, font: helvB, color: rgb(0, 0, 0),
-        });
+        // Draw a real check mark (✓) using two line segments — matches the on-screen tick.
+        const pad = Math.min(o.w, o.h) * 0.18;
+        const x0 = o.x + pad;
+        const x1 = o.x + o.w * 0.42;
+        const x2 = o.x + o.w - pad;
+        const yMid = yBottom + o.h * 0.42;
+        const yLow = yBottom + pad;
+        const yHigh = yBottom + o.h - pad;
+        const thick = Math.max(1, Math.min(o.w, o.h) * 0.14);
+        page.drawLine({ start: { x: x0, y: yMid }, end: { x: x1, y: yLow }, thickness: thick, color: rgb(0, 0, 0) });
+        page.drawLine({ start: { x: x1, y: yLow }, end: { x: x2, y: yHigh }, thickness: thick, color: rgb(0, 0, 0) });
       }
     } else if (o.kind === "signature") {
       const { bytes } = await fetchAsBytes(o.dataUrl);
