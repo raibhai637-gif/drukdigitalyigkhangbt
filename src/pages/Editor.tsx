@@ -529,7 +529,7 @@ const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize, pageIndex
           onClick={(e) => e.stopPropagation()}
           style={{
             width: "100%", height: "100%", border: "none", background: "transparent",
-            outline: "none", padding: 0, color: o.color, fontSize: o.fontSize * zoom, lineHeight: 1.1,
+            outline: "none", padding: 0, color: o.color, fontSize: o.fontSize * zoom, lineHeight: 1,
             fontFamily: "Helvetica, Arial, sans-serif",
           }}
         />
