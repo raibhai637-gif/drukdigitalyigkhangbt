@@ -59,15 +59,13 @@ const Auth = () => {
 
   const submitForgot = async () => {
     if (!forgotEmail) return toast.error("Enter your email");
-    // Look up user_id by joining via auth (we don't have direct access).
-    // Insert a request keyed by email; admin will resolve manually.
-    const { data: u } = await supabase.auth.getUser();
+    // Submit with user_id NULL — admin will resolve which account this email maps to.
     const { error } = await supabase.from("password_reset_requests").insert({
-      user_id: u.user?.id ?? "00000000-0000-0000-0000-000000000000",
+      user_id: null,
       email: forgotEmail,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Reset request sent to admin. They will reset your password to the default."); setForgotOpen(false); setForgotEmail(""); }
+    else { toast.success("Reset request sent. An admin will reset your password and you'll be required to set a new one on your next sign-in."); setForgotOpen(false); setForgotEmail(""); }
   };
 
   return (
@@ -109,7 +107,7 @@ const Auth = () => {
           {forgotOpen && (
             <div className="mt-5 rounded-lg border border-border/70 bg-secondary/40 p-4 space-y-3">
               <p className="text-sm font-medium">Request password reset</p>
-              <p className="text-xs text-muted-foreground">An admin will reset your password to <strong>dorjijamtse</strong>. You can change it after you sign in.</p>
+              <p className="text-xs text-muted-foreground">An admin will reset your password to a temporary value. You'll be prompted to set a new one immediately after sign-in.</p>
               <Input type="email" placeholder="Your account email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
               <div className="flex gap-2">
                 <Button variant="hero" size="sm" onClick={submitForgot}>Send request</Button>

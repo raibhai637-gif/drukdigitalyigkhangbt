@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import {
   Type, CheckSquare, PenLine, Stamp as StampIcon, Upload, Save, Download,
-  Trash2, ZoomIn, ZoomOut, Loader2, ChevronLeft, Settings2, ChevronUp, ChevronDown,
+  Trash2, ZoomIn, ZoomOut, Loader2, ChevronLeft, Settings2,
 } from "lucide-react";
 import { pdfjsLib, MM_TO_PT, type Overlay } from "@/lib/pdf";
 import bhutanStamp from "@/assets/bhutan-legal-stamp.jpeg";
@@ -178,12 +178,12 @@ const Editor = () => {
     }
     setBusy("download");
     try {
-      // Try to spend a credit first (atomic-ish via two writes)
-      const { data: cur } = await supabase.from("credits").select("balance").eq("user_id", user!.id).single();
-      if (!cur || cur.balance < 1) throw new Error("Not enough credits");
-      const { error: dec } = await supabase.from("credits").update({ balance: cur.balance - 1, updated_at: new Date().toISOString() }).eq("user_id", user!.id);
-      if (dec) throw dec;
-      await supabase.from("credit_ledger").insert({ user_id: user!.id, delta: -1, kind: "spend", reference_id: doc.id, note: `Export ${doc.title}` });
+      // Atomic credit deduction + ledger via SECURITY DEFINER RPC.
+      const { data: ok, error: rpcErr } = await supabase.rpc("consume_credit", {
+        _user: user!.id, _ref: doc.id, _note: `Export ${doc.title}`,
+      });
+      if (rpcErr) throw rpcErr;
+      if (!ok) throw new Error("Not enough credits");
       // Save current state, then export
       await supabase.from("documents").update({ overlays: overlays as unknown as never }).eq("id", doc.id);
       const out = await exportPdf(pdfBytes, overlays);
@@ -529,7 +529,7 @@ const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize, pageIndex
           onClick={(e) => e.stopPropagation()}
           style={{
             width: "100%", height: "100%", border: "none", background: "transparent",
-            outline: "none", padding: 0, color: o.color, fontSize: o.fontSize * zoom, lineHeight: 1.1,
+            outline: "none", padding: 0, color: o.color, fontSize: o.fontSize * zoom, lineHeight: 1,
             fontFamily: "Helvetica, Arial, sans-serif",
           }}
         />
@@ -556,21 +556,18 @@ const OverlayBox = ({ o, zoom, selected, onSelect, onChange, pageSize, pageIndex
              }} />
       )}
       {selected && pageCount > 1 && (
-        <div className="absolute -top-8 left-0 flex gap-1 bg-card/90 backdrop-blur rounded-md border border-border/60 shadow-sm px-1 py-0.5"
+        <div className="absolute -top-8 left-0 flex items-center gap-1 bg-card/95 backdrop-blur rounded-md border border-border/60 shadow-sm px-1.5 py-0.5"
              onPointerDown={(e) => e.stopPropagation()}>
-          <button
-            disabled={pageIndex === 0}
-            onClick={(e) => { e.stopPropagation(); onChange({ page: pageIndex - 1 } as Partial<Overlay>); }}
-            className="p-1 disabled:opacity-30 hover:text-primary" title="Move to previous page">
-            <ChevronUp className="h-3.5 w-3.5" />
-          </button>
-          <span className="text-[10px] text-muted-foreground self-center px-1">p{pageIndex + 1}</span>
-          <button
-            disabled={pageIndex >= pageCount - 1}
-            onClick={(e) => { e.stopPropagation(); onChange({ page: pageIndex + 1 } as Partial<Overlay>); }}
-            className="p-1 disabled:opacity-30 hover:text-primary" title="Move to next page">
-            <ChevronDown className="h-3.5 w-3.5" />
-          </button>
+          <span className="text-[10px] text-muted-foreground">Move to</span>
+          <select
+            value={pageIndex}
+            onChange={(e) => { e.stopPropagation(); onChange({ page: Number(e.target.value) } as Partial<Overlay>); }}
+            onClick={(e) => e.stopPropagation()}
+            className="text-[11px] bg-background border border-border/60 rounded px-1 py-0.5 cursor-pointer">
+            {Array.from({ length: pageCount }, (_, i) => (
+              <option key={i} value={i}>Page {i + 1}</option>
+            ))}
+          </select>
         </div>
       )}
     </div>
